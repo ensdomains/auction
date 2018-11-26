@@ -1,9 +1,6 @@
 pragma solidity ^0.4.24;
 
 contract NameAuction {
-    uint public constant MIN_BID = 0.01 ether;
-    uint public constant MIN_NAME_LENGTH = 3;
-    uint public constant MAX_NAME_LENGTH = 6;
 
     struct Auction {
         uint maxBid;
@@ -11,15 +8,21 @@ contract NameAuction {
         address winner;
     }
 
+    uint public constant MIN_BID = 0.01 ether;
+    uint public constant MIN_NAME_LENGTH = 3;
+    uint public constant MAX_NAME_LENGTH = 6;
+
     address public owner;
+    address public beneficiary;
+
     uint public biddingStarts;
     uint public biddingEnds;
     uint public revealEnds;
-    address public beneficiary;
+    uint public fundsAvailable;
+
     mapping(bytes32=>uint) public bids;
     mapping(string=>Auction) auctions;
     mapping(string=>address) names;
-    uint public fundsAvailable;
 
     event BidPlaced(address indexed bidder, uint amount, bytes32 hash);
     event BidRevealed(address indexed bidder, bytes32 indexed labelHash, string name, uint amount);
@@ -38,20 +41,7 @@ contract NameAuction {
         beneficiary = _beneficiary;
     }
 
-    function auction(string name) public view returns(uint maxBid, uint secondBid, address winner) {
-        Auction storage a = auctions[name];
-        return (a.maxBid, a.secondBid, a.winner);
-    }
-
-    function nameOwner(string name) public view returns(address) {
-        return names[name];
-    }
-
-    function computeBidHash(address bidder, string name, bytes32 secret) public pure returns(bytes32) {
-        return keccak256(abi.encodePacked(bidder, name, secret));
-    }
-
-    function placeBid(bytes32 bidHash) public payable {
+    function placeBid(bytes32 bidHash) external payable {
         require(now >= biddingStarts && now < biddingEnds);
 
         require(msg.value >= MIN_BID);
@@ -60,7 +50,7 @@ contract NameAuction {
         emit BidPlaced(msg.sender, msg.value, bidHash);
     }
 
-    function revealBid(address bidder, string name, bytes32 secret) public {
+    function revealBid(address bidder, string name, bytes32 secret) external {
         require(now >= biddingEnds && now < revealEnds);
 
         bytes32 bidHash = computeBidHash(bidder, name, secret);
@@ -97,7 +87,7 @@ contract NameAuction {
         }
     }
 
-    function finaliseAuction(string name) public {
+    function finaliseAuction(string name) external {
         require(now >= revealEnds);
 
         Auction storage auction = auctions[name];
@@ -119,10 +109,23 @@ contract NameAuction {
         delete auctions[name];
     }
 
-    function withdraw() public {
+    function withdraw() external {
         require(msg.sender == owner);
         msg.sender.transfer(fundsAvailable);
         fundsAvailable = 0;
+    }
+
+    function auction(string name) external view returns(uint maxBid, uint secondBid, address winner) {
+        Auction storage a = auctions[name];
+        return (a.maxBid, a.secondBid, a.winner);
+    }
+
+    function nameOwner(string name) external view returns(address) {
+        return names[name];
+    }
+
+    function computeBidHash(address bidder, string name, bytes32 secret) public pure returns(bytes32) {
+        return keccak256(abi.encodePacked(bidder, name, secret));
     }
 
     /**
