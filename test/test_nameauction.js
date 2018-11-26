@@ -175,7 +175,7 @@ contract('NameAuction', function(accounts) {
 		assert.equal(auctionAfter[2], "0x0000000000000000000000000000000000000000");
 
 		// Check the owner gets updated
-		assert.equal(await nameauction.nameOwner(firstbid.name), higherbid.account);
+		assert.equal(await nameauction.labelOwner(firstbid.name), higherbid.account);
 
 		// Check the funds available get updated
 		assert.equal((await nameauction.fundsAvailable()).toString(), auction[1].toString());
@@ -201,4 +201,4 @@ contract('NameAuction', function(accounts) {
 		assert.equal((await web3.eth.getBalance(accounts[0])).toString(), balanceBefore.add(availableBefore));
 		assert.equal((await nameauction.fundsAvailable()).toString(), "0");
 	});
-});
+	});

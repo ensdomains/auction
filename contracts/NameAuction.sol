@@ -22,11 +22,11 @@ contract NameAuction {
 
     mapping(bytes32=>uint) public bids;
     mapping(string=>Auction) auctions;
-    mapping(string=>address) names;
+    mapping(string=>address) labels;
 
     event BidPlaced(address indexed bidder, uint amount, bytes32 hash);
-    event BidRevealed(address indexed bidder, bytes32 indexed labelHash, string name, uint amount);
-    event AuctionFinalised(address indexed winner, bytes32 indexed labelHash, string name, uint amount);
+    event BidRevealed(address indexed bidder, bytes32 indexed labelHash, string label, uint amount);
+    event AuctionFinalised(address indexed winner, bytes32 indexed labelHash, string label, uint amount);
 
     constructor(uint _biddingStarts, uint _biddingEnds, uint _revealEnds, address _beneficiary) public {
         require(_biddingStarts >= now);
@@ -50,24 +50,24 @@ contract NameAuction {
         emit BidPlaced(msg.sender, msg.value, bidHash);
     }
 
-    function revealBid(address bidder, string name, bytes32 secret) external {
+    function revealBid(address bidder, string label, bytes32 secret) external {
         require(now >= biddingEnds && now < revealEnds);
 
-        bytes32 bidHash = computeBidHash(bidder, name, secret);
+        bytes32 bidHash = computeBidHash(bidder, label, secret);
         uint bidAmount = bids[bidHash];
         bids[bidHash] = 0;
         require(bidAmount > 0);
 
-        // Immediately refund bids on invalid names.
-        uint nameLen = strlen(name);
-        if(nameLen < MIN_NAME_LENGTH || nameLen > MAX_NAME_LENGTH) {
+        // Immediately refund bids on invalid labels.
+        uint labelLen = strlen(label);
+        if(labelLen < MIN_LABEL_LENGTH || labelLen > MAX_LABEL_LENGTH) {
             bidder.transfer(bidAmount);
             return;
         }
 
-        emit BidRevealed(bidder, keccak256(abi.encodePacked(name)), name, bidAmount);
+        emit BidRevealed(bidder, keccak256(abi.encodePacked(label)), label, bidAmount);
 
-        Auction storage a = auctions[name];
+        Auction storage a = auctions[label];
         if(bidAmount > a.maxBid) {
             // New winner!
             if(a.winner != 0) {
@@ -87,10 +87,10 @@ contract NameAuction {
         }
     }
 
-    function finaliseAuction(string name) external {
+    function finaliseAuction(string label) external {
         require(now >= revealEnds);
 
-        Auction storage auction = auctions[name];
+        Auction storage auction = auctions[label];
         require(auction.winner != 0);
 
         uint winPrice = auction.secondBid;
@@ -103,10 +103,10 @@ contract NameAuction {
         }
         fundsAvailable += winPrice;
 
-        emit AuctionFinalised(auction.winner, keccak256(abi.encodePacked(name)), name, winPrice);
+        emit AuctionFinalised(auction.winner, keccak256(abi.encodePacked(label)), label, winPrice);
 
-        names[name] = auction.winner;
-        delete auctions[name];
+        labels[label] = auction.winner;
+        delete auctions[label];
     }
 
     function withdraw() external {
