@@ -9,8 +9,8 @@ contract NameAuction {
     }
 
     uint public constant MIN_BID = 0.01 ether;
-    uint public constant MIN_NAME_LENGTH = 3;
-    uint public constant MAX_NAME_LENGTH = 6;
+    uint public constant MIN_LABEL_LENGTH = 3;
+    uint public constant MAX_LABEL_LENGTH = 6;
 
     address public owner;
     address public beneficiary;
@@ -120,8 +120,8 @@ contract NameAuction {
         return (a.maxBid, a.secondBid, a.winner);
     }
 
-    function nameOwner(string name) external view returns(address) {
-        return names[name];
+    function labelOwner(string name) external view returns(address) {
+        return labels[name];
     }
 
     function computeBidHash(address bidder, string name, bytes32 secret) public pure returns(bytes32) {
